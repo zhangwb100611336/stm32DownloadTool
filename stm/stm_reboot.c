@@ -6,7 +6,9 @@
 void stm_reboot_to_system_memory()
 {
     serial_set_pin(TIOCM_RTS);
+   // usleep(1000000);
     serial_set_pin(TIOCM_DTR);
-    sleep(1);
+    usleep(200000);
     serial_reset_pin(TIOCM_DTR);
+    usleep(200000);
 }

@@ -1,4 +1,5 @@
 #include<fcntl.h>
+#include<stdint.h>
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
@@ -51,6 +52,7 @@ static int serial_open(const char* const serial_name)
 {
      int fd = 0;
      fd = open(serial_name, O_RDWR | O_NOCTTY | O_NDELAY);
+     printf("fd = %d\n",fd);
      if(fd < 0)
      {
          perror("open");
@@ -76,94 +78,75 @@ static int serial_open(const char* const serial_name)
      return fd;
 }
 
+
+
 int serial_config(const SerialAtt* const serial_att, const int fd)
 {
-    struct termios new_tio = {0};
-    struct termios old_tio = {0};
+	struct termios optnew;
+	speed_t speed = B19200;
 
-    if(tcgetattr(fd, &old_tio) != 0)
-    {
-        perror("tcgetattr");
-        return -1;
-    }
 
-    new_tio.c_cflag |=  CLOCAL | CREAD;
-    new_tio.c_cflag |=  ~CSIZE;
+		/* Get current option */
+		tcgetattr(fd, &optnew);
 
-    switch(serial_att->bits)
-    {
-        case 8:
-            new_tio.c_cflag |= CS8;
-            break;
-        default:
-            new_tio.c_cflag |= CS7;
-            break;
-    }
+		/* initialize new option to raw input/output */
+//		memset(&optnew, 0, sizeof(optnew));
+		cfmakeraw(&optnew);
+		optnew.c_cc[VMIN ] = 0;
+		optnew.c_cc[VTIME] = 2*10;
 
-    switch(serial_att->event)
-    {
-        case 'o':
-        case 'O':
-            new_tio.c_cflag |= PARENB;
-            new_tio.c_cflag |= PARODD;
-            new_tio.c_iflag |= (INPCK | ISTRIP);
-            break;
-        case 'e':
-        case 'E':
-            new_tio.c_cflag |= PARENB;
-            new_tio.c_cflag &= ~PARODD;
-            new_tio.c_iflag |= (INPCK | ISTRIP);
-            break;
-        case 'n':
-        case 'N':
-            new_tio.c_cflag &= ~PARENB;
-            break;
-        default:
-            break;
-    }
+		/* set baudrate */
+		switch (serial_att->speed) {
+			case   1200: speed =   B1200;  break;
+			case   1800: speed =   B1800;  break;
+			case   4800: speed =   B4800;  break;
+			case   9600: speed =   B9600;  break;
+			case  19200: speed =  B19200;  break;
+			case  38400: speed =  B38400;  break;
+			case  57600: speed =  B57600;  break;
+			case 115200: speed = B115200;  break;
+			default:    speed = B19200; break;
+		}
+		cfsetispeed(&optnew, speed);
+		cfsetospeed(&optnew, speed);
 
-    switch(serial_att->speed)
-    {
-        case 2400:
-            cfsetispeed(&new_tio, B2400);
-            cfsetospeed(&new_tio, B2400);
-            break;
-        case 4800:
-            cfsetispeed(&new_tio, B4800);
-            cfsetospeed(&new_tio, B4800);
-            break;
-        case 115200:
-            cfsetispeed(&new_tio, B115200);
-            cfsetospeed(&new_tio, B115200);
-            break;
-        case 460800:
-            cfsetispeed(&new_tio, B460800);
-            cfsetospeed(&new_tio, B460800);
-            break;
-        default:
-            cfsetispeed(&new_tio, B9600);
-            cfsetospeed(&new_tio, B9600);
-            break;
-    }
+		/* Set data bits */
+		optnew.c_cflag &= ~CSIZE;
+		optnew.c_cflag &= ~CRTSCTS;
+		optnew.c_iflag &= ~(ICRNL|IXON);
+		optnew.c_cflag |= CLOCAL | CREAD;
+		optnew.c_oflag &= ~OPOST;
 
-    if(serial_att->stop == 1)
-        new_tio.c_cflag &= ~CSTOPB;
-    else
-        new_tio.c_cflag |= CSTOPB;
+		switch (serial_att->bits) {
+			case 5: optnew.c_cflag |= CS5; break;
+			case 6: optnew.c_cflag |= CS6; break;
+			case 7: optnew.c_cflag |= CS7; break;
+			default :
+				optnew.c_cflag |= CS8; break;
+		}
 
-    
-    new_tio.c_cc[VTIME] = 0;
-    new_tio.c_cc[VMIN] = 0;
+		/* Set parity checking */
+		optnew.c_cflag |= PARENB;
+		switch (serial_att->event) {
+			case 'e':
+			case 'E': optnew.c_cflag &= ~PARODD; break;
+			case 'o':
+			case 'O': optnew.c_cflag &=  PARODD; break;
+			default :
+				optnew.c_cflag &= ~PARENB; break;
+		}
 
-    tcflush(fd,TCIFLUSH);
+		/* Set stop bit(s) */
+		if (serial_att->stop == 2)
+			optnew.c_cflag &=  CSTOPB;
+		else
+			optnew.c_cflag &= ~CSTOPB;
+	
+    	optnew.c_lflag &= ~( ICANON | ECHO | ECHOE | ISIG );
 
-    if(tcsetattr(fd,TCSANOW,&new_tio) != 0);
-    {
-        perror("tcsetatr");
-        return -1;
-    }
-    return 0;
-
+		/* Apply new option */
+		tcsetattr(fd, TCSANOW, &optnew);
+	return 0;
 }
 
 int serial_allocate(const SerialAtt* const serial_att)
@@ -172,7 +155,7 @@ int serial_allocate(const SerialAtt* const serial_att)
     fd = serial_open(serial_att->serial_name);
     if(fd < 0)
         return -1;
-    if(!serial_config(serial_att, fd))
+    if(serial_config(serial_att, fd) != 0)
     {
         return -1;
     }
@@ -191,9 +174,9 @@ int serial_release()
    printf("serial release ok!\n");
 }
 
-int serial_sent(const char* const data, const int length)
+int serial_sent( uint8_t*  data, int length)
 {
-    char * buff = NULL;
+    uint8_t * buff = NULL;
     int len = 0;
     int ret = 0;
 
@@ -207,7 +190,7 @@ int serial_sent(const char* const data, const int length)
         printf("the termi %s not open!\n", g_serial_name);
     }
 
-    buff = (char*)data;
+    buff = (uint8_t*)data;
     len = length;
 
     while(len > 0)
@@ -225,12 +208,12 @@ int serial_sent(const char* const data, const int length)
     return length - len;
 }
 
-int serial_receive( char* const data, const int length )
+int serial_receive( uint8_t* data,  int length )
 {
     fd_set fdr;
     struct timeval timeout = {3,0};
     int cnt = 0;
-    char * buff;
+    uint8_t * buff;
     int ret = 0;
     
     if(NULL == data || length < 1)
@@ -241,6 +224,7 @@ int serial_receive( char* const data, const int length )
     if(!g_serial_open)
     {
         printf("the termi %s not open!\n", g_serial_name);
+        return -1;
     }
     buff = data;
     while (cnt < length )
@@ -271,7 +255,7 @@ int serial_receive( char* const data, const int length )
         }
     }   
 
-    return 0;
+    return ret;
 
 }
 
@@ -297,5 +281,9 @@ int serial_receive( char* const data, const int length )
      ioctl (g_serial_fd, TIOCMSET, &set);
  }
 
+ void serial_flush()
+ {
+     tcflush(g_serial_fd, TCIOFLUSH);
+ }
 
 
