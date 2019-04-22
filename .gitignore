@@ -1,0 +1,5 @@
+
+cscope*
+
+cscope.in.out
+*.o
