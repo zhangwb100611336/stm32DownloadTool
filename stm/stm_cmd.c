@@ -78,16 +78,17 @@ static int stm32_data_sent(uint8_t* data, uint8_t number)
     return -1;
 }
 
-int stm32_cmd_get()
+int stm32_cmd_get(uint8_t* rec_data, uint8_t* data_length)
 {
-    uint8_t rec_data[15] = {0};
     uint8_t index = 0;
     int i = 0;
+    if(NULL == rec_data||NULL == data_length)
+        return -1;
     if(stm32_cmd_sent(STM_GET_CMD) != 0)
     {
         return -1;
     }
-    
+    printf("\nreceiveing data"); 
     while (index < 15)
     {
         
@@ -119,12 +120,8 @@ int stm32_cmd_get()
         printf("*");
         fflush(stdout);
     }
-    
-    for(i = 0; i < index ; i++)
-    {
-        printf("rec_data[%d] = %0.2x\n", i, rec_data[i]);
-    }
-
+   
+    *data_length = index; 
     return  0;
 }
 int stm32_cmd_get_gv()

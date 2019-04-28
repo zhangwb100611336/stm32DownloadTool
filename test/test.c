@@ -4,12 +4,35 @@
 #include <unistd.h>
 #include <stdio.h>
 
+void print_data(uint8_t* data, uint8_t length )
+{
+    if(NULL == data)
+        return ;
+    printf("length: %d\n",length);
+    uint8_t index = 0;
+    for(index = 0; index < length; index++)
+    {
+        if(!index%16)
+        {
+            if(0 != index)
+                printf("\n");
+            printf("%0.2x ： ",index);
+        }
+
+        printf("0x%0.2x ",data[index]);
+    }
+
+    printf("\n");
+    return;
+}
+
 int main(int argn, char** argv)
 {
     uint8_t rec_data[10] = {0};
+    uint8_t test_data[100] = {0};
+    uint8_t length = 0;
     if(argn > 1)
     {
-        printf("tty: %s\n", argv[1]);
 
         SerialAtt s;
         s.speed = 115200;
@@ -19,23 +42,36 @@ int main(int argn, char** argv)
         s.event = 'E';
 
         int ret;
-        printf("open serial....\n");
+        printf("begin test program.\n");
+        printf("begin test serial:\n");
+        printf("trying to allocate serial %s\n",argv[1]);
         ret = serial_allocate(&s);
+        sleep(1);
         if(0 != ret)
         {
             printf(" allocate failed, ret=%d\n", ret);
             return 1;
         }
+        printf("allocate successful, test serial ok!\n");
         
-        printf(" reboot stm32...\n");
+        printf(" reboot mcu to system memory:\n");
         stm_reboot_to_system_memory();
 
-        printf("sync to stm32....\n");
+        printf("sync with mcu\n");
         if(stm32_sync() == 0)
         {
             printf("sync successful!\n");
             printf("==================\n");
-            stm32_cmd_get();
+            printf("get the cmd what mcu support:\n");
+            if(-1 == stm32_cmd_get(test_data,&length))
+            {
+                printf("get cmd failed! please check this ....\n");
+            }
+            else
+            {
+                printf("successful get support cmd:\n");
+                print_data(test_data,length);
+            }
             printf("==================\n");
             stm32_cmd_get_gv();
             printf("==================\n");
@@ -44,11 +80,16 @@ int main(int argn, char** argv)
             stm32_cmd_rm(rec_data,0x8000000,8);
             printf("==================\n");
         }
+        else
+        {
+            printf("sync failed:\n 1.please check the mcu whether reboot to system momery.\n  2.check whether send right message.\n ");
+        }
 
-
+        printf("begin release serial!\n");
         ret = serial_release() ;
-
-        printf("release ret = %d\n", ret);
+        if(-1== ret)
+            printf("release serial failed!\n");
+        printf("release successful!\n");
     }
 
     return 0;

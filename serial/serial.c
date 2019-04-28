@@ -165,13 +165,14 @@ int serial_allocate(const SerialAtt* const serial_att)
 
 int serial_release()
 {
+    int ret = 0;
    if(g_serial_open)
    {
-       if(-1 == close(g_serial_fd))
+       if(-1 == (ret=close(g_serial_fd)))
            perror("close");
    }
    g_serial_open = 0;
-   printf("serial release ok!\n");
+   return ret;
 }
 
 int serial_sent( uint8_t*  data, int length)
