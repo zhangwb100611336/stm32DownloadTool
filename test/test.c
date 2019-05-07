@@ -28,7 +28,6 @@ void print_data(uint8_t* data, uint8_t length )
 
 int main(int argn, char** argv)
 {
-    uint8_t rec_data[10] = {0};
     uint8_t test_data[100] = {0};
     uint8_t length = 0;
     if(argn > 1)
@@ -73,11 +72,35 @@ int main(int argn, char** argv)
                 print_data(test_data,length);
             }
             printf("==================\n");
-            stm32_cmd_get_gv();
+            if(-1 == stm32_cmd_get_gv(test_data,&length))
+            {
+                printf("get gv failed! please check this ....\n");
+            }
+            else
+            {
+                printf("successful get gv:\n");
+                print_data(test_data,length);
+            }
             printf("==================\n");
-            stm32_cmd_get_gid();
+           if(-1 == stm32_cmd_get_gid(test_data,&length))
+            {
+                printf("get gv failed! please check this ....\n");
+            }
+            else
+            {
+                printf("successful get gv:\n");
+                print_data(test_data,length);
+            }
             printf("==================\n");
-            stm32_cmd_rm(rec_data,0x8000000,8);
+            if(-1 == stm32_cmd_rm(test_data,0x8000000,8))
+            {
+                printf("read momery error!\n");
+            }
+            else
+            {
+                printf("successful read memory:\n");
+                print_data(test_data,8);
+            }
             printf("==================\n");
         }
         else

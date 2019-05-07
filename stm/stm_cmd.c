@@ -124,11 +124,12 @@ int stm32_cmd_get(uint8_t* rec_data, uint8_t* data_length)
     *data_length = index; 
     return  0;
 }
-int stm32_cmd_get_gv()
+int stm32_cmd_get_gv(uint8_t* rec_data, uint8_t* data_length)
 {
-    uint8_t rec_data[4] = {0};
     uint8_t index = 0;
     int i = 0;
+    if(NULL == rec_data||NULL == data_length)
+        return -1;
     if(stm32_cmd_sent(STM_GET_GV) != 0)
     {
         return -1;
@@ -149,18 +150,16 @@ int stm32_cmd_get_gv()
             index++;
         }
     }
-    for(i = 0; i < index ; i++)
-    {
-        printf("rec_data[%d] = %0.2x\n", i, rec_data[i]);
-    }
-
+    
+    *data_length = index;
     return  0;
 }
-int stm32_cmd_get_gid()
+int stm32_cmd_get_gid(uint8_t* rec_data, uint8_t* data_length)
 {
-    uint8_t rec_data[4] = {0};
     uint8_t index = 0;
     int i = 0;
+    if(NULL == rec_data||NULL == data_length)
+        return -1;
     if(stm32_cmd_sent(STM_GET_GID) != 0)
     {
         return -1;
@@ -181,10 +180,7 @@ int stm32_cmd_get_gid()
             index++;
         }
     }
-    for(i = 0; i < index ; i++)
-    {
-        printf("rec_data[%d] = %0.2x\n", i, rec_data[i]);
-    }
+    *data_length = index;
 
     return  0;
 }
@@ -239,14 +235,6 @@ int stm32_cmd_rm(uint8_t *data,uint32_t addr, uint8_t number)
             }
             index++;
         }
-    }
-
-
-
-
-       for(i = 0; i < index ; i++)
-    {
-        printf("data[%d] = %0.2x\n", i, data[i]);
     }
 
     return  0;
