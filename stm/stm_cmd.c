@@ -15,6 +15,8 @@
 #define STM_GET_GV (uint8_t)(0x01)
 #define STM_GET_GID (uint8_t)(0x02)
 #define STM_RM (uint8_t)(0x11)
+#define STM_GO (uint8_t)(0x21)
+#define STM_WM (uint8_t)(0x31)
 
 static int stm32_cmd_sent(const uint8_t cmd)
 {
@@ -239,6 +241,88 @@ int stm32_cmd_rm(uint8_t *data,uint32_t addr, uint8_t number)
 
     return  0;
 }
+
+
+
+int stm32_cmd_go(uint32_t addr)
+{
+    uint8_t send_addrss[5] = {0};
+    int i = 0;
+    if(stm32_cmd_sent(STM_GO) != 0)
+    {
+        return -1;
+    }
+    *((uint32_t*)send_addrss) =  htonl(addr);
+    for(i = 0; i < 4 ; i++)
+    {
+        send_addrss[4] ^= send_addrss[i];
+        printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
+    }
+    printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
+
+    if(stm32_data_sent(send_addrss, 5) != 5)
+    {
+        printf("send address error!\n");
+        return -1;
+    }
+    return  0;
+}
+int stm32_cmd_wm(uint8_t *data,uint32_t addr, uint8_t number)
+{
+    uint8_t index = 0;
+    uint8_t send_addrss[5] = {0};
+    uint8_t send_number = 0;
+    uint8_t xor_data = 0;
+    int i = 0;
+    if(NULL == data || 0 == number)
+    {
+        printf("input para error\n");
+        return -1;
+    }
+    if(stm32_cmd_sent(STM_WM) != 0)
+    {
+        return -1;
+    }
+    *((uint32_t*)send_addrss) =  htonl(addr);
+    for(i = 0; i < 4 ; i++)
+    {
+        send_addrss[4] ^= send_addrss[i];
+        printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
+    }
+    printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
+
+   if(stm32_data_sent(send_addrss, 5) != 5)
+    {
+        printf("send address error!\n");
+        return -1;
+    }
+
+
+    i = 0;
+    send_number = number - 1;
+    xor_data = send_number;
+    while(i < number)
+    {
+        xor_data ^= data[i];
+    }
+    if(serial_sent(&send_number,1) != 1)
+    {
+        return -1;
+    }
+     
+    if(serial_sent(data,number) != number)
+    {
+        return -1;
+    }
+    
+    if(stm32_data_sent(&xor_data,1) == 1)
+    {
+        return -1;
+    }
+   
+    return  0;
+}
+
 
 int stm32_sync()
 {

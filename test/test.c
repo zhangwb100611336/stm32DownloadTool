@@ -92,15 +92,26 @@ int main(int argn, char** argv)
                 print_data(test_data,length);
             }
             printf("==================\n");
-            if(-1 == stm32_cmd_rm(test_data,0x8000000,8))
+            if(-1 == stm32_cmd_rm(test_data,0x8000000,1))
             {
                 printf("read momery error!\n");
             }
             else
             {
                 printf("successful read memory:\n");
-                print_data(test_data,8);
+                print_data(test_data,1);
             }
+            printf("==================\n");
+            sleep(10);
+             if(-1 == stm32_cmd_go(0x8000000))
+            {
+                printf("go command error!\n");
+            }
+            else
+            {
+                printf("successful go command!\n");
+            }
+
             printf("==================\n");
         }
         else
