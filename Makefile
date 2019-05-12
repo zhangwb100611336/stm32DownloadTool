@@ -13,14 +13,14 @@ export CFLAGS = -g $(addprefix -I $(BASE_PATH)/,$(SUB_DIR))
 export CC = gcc
 MAKE = make
 
-SUB_DIR = stm serial test
+SUB_DIR = stm serial test hex main
 
 TARGET = test.elf
 
-all:$(TARGET) 
+all:$(SUB_DIR) $(TARGET) 
 
-$(TARGET):$(SUB_DIR)
-	$(CC) $(shell find $(addprefix $(BASE_OBJ_PATH)/,$^) -name *.o) -o $@
+$(TARGET):TRIGGER
+	$(CC) $(shell find $(addprefix $(BASE_OBJ_PATH)/,$(SUB_DIR)) -name *.o) -o $@
 
 $(SUB_DIR) :TRIGGER
 	$(MAKE) -C $@

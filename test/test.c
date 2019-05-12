@@ -3,6 +3,7 @@
 #include "stm_reboot.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <hex.h>
 
 void print_data(uint8_t* data, uint8_t length )
 {
@@ -26,7 +27,8 @@ void print_data(uint8_t* data, uint8_t length )
     return;
 }
 
-int main(int argn, char** argv)
+
+int stm_test(int argn, char** argv)
 {
     uint8_t test_data[100] = {0};
     uint8_t length = 0;
@@ -92,16 +94,59 @@ int main(int argn, char** argv)
                 print_data(test_data,length);
             }
             printf("==================\n");
-            if(-1 == stm32_cmd_rm(test_data,0x8000000,1))
+            if(-1 == stm32_cmd_rm(test_data,0x8000000,8))
             {
                 printf("read momery error!\n");
             }
             else
             {
                 printf("successful read memory:\n");
-                print_data(test_data,1);
+                print_data(test_data,8);
             }
             printf("==================\n");
+         if(-1 == stm32_cmd_er(NULL,0))
+            {
+                printf("earse momery error!\n");
+            }
+            else
+            {
+                printf("successful earse memory:\n");
+            }
+            printf("==================\n");
+           if(-1 == stm32_cmd_rm(test_data,0x8000000,9))
+            {
+                printf("read momery error!\n");
+            }
+            else
+            {
+                printf("successful read memory:\n");
+                print_data(test_data,9);
+            }
+            printf("==================\n");
+            uint8_t wm_data[8] = {1,2,3,4,5,6,7,8};
+         if(-1 == stm32_cmd_wm(wm_data,0x8000000,8))
+            {
+                printf("write momery error!\n");
+            }
+            else
+            {
+                printf("successful write memory:\n");
+                print_data(wm_data,8);
+            }
+            printf("==================\n");
+         if(-1 == stm32_cmd_rm(test_data,0x8000000,9))
+            {
+                printf("read momery error!\n");
+            }
+            else
+            {
+                printf("successful read memory:\n");
+                print_data(test_data,9);
+            }
+            printf("==================\n");
+
+
+            /*
             sleep(10);
              if(-1 == stm32_cmd_go(0x8000000))
             {
@@ -111,7 +156,7 @@ int main(int argn, char** argv)
             {
                 printf("successful go command!\n");
             }
-
+            */    
             printf("==================\n");
         }
         else
@@ -128,3 +173,20 @@ int main(int argn, char** argv)
 
     return 0;
 }
+
+int hex_test(int argn, char** argv)
+{
+   if(argn < 1)
+       return 0;
+
+   printf("hex file name:%s\n",argv[1]);
+   uint8_t instance_id = -1;
+   if(-1 == (instance_id = hex_file_create(argv[1]) ))
+   {
+       return 0;
+   }
+   hex_file_print(instance_id);
+   return 0;
+}
+
+   

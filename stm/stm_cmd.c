@@ -17,14 +17,15 @@
 #define STM_RM (uint8_t)(0x11)
 #define STM_GO (uint8_t)(0x21)
 #define STM_WM (uint8_t)(0x31)
+#define STM_ER (uint8_t)(0x43)
 
 static int stm32_cmd_sent(const uint8_t cmd)
 {
     uint8_t cmd_send[2] = {0};
     cmd_send[0] = cmd;
     cmd_send[1] = cmd^(0xff);
-    printf("cmd_send[0] = %0.2x\n", cmd_send[0]);
-    printf("cmd_send[1] = %0.2x\n", cmd_send[1]);
+  //  printf("cmd_send[0] = %0.2x\n", cmd_send[0]);
+  //  printf("cmd_send[1] = %0.2x\n", cmd_send[1]);
 
     if(serial_sent(cmd_send, 2) == 2)
     {
@@ -287,9 +288,9 @@ int stm32_cmd_wm(uint8_t *data,uint32_t addr, uint8_t number)
     for(i = 0; i < 4 ; i++)
     {
         send_addrss[4] ^= send_addrss[i];
-        printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
+        //printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
     }
-    printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
+    //printf("send_addrss[%d]= %0.2x\n",i, send_addrss[i]);
 
    if(stm32_data_sent(send_addrss, 5) != 5)
     {
@@ -304,6 +305,7 @@ int stm32_cmd_wm(uint8_t *data,uint32_t addr, uint8_t number)
     while(i < number)
     {
         xor_data ^= data[i];
+        i++;
     }
     if(serial_sent(&send_number,1) != 1)
     {
@@ -315,14 +317,57 @@ int stm32_cmd_wm(uint8_t *data,uint32_t addr, uint8_t number)
         return -1;
     }
     
-    if(stm32_data_sent(&xor_data,1) == 1)
+    if(stm32_data_sent(&xor_data,1) != 1)
     {
+        printf("send xor data error");
         return -1;
     }
    
     return  0;
 }
 
+int stm32_cmd_er(uint8_t* page, uint8_t number)
+{
+    uint8_t send_data[255] = {0};
+    uint8_t i = 0;
+
+    if(NULL == page&& 0 != number )
+    {
+        printf("input para error!\n");
+        return -1;
+    }
+
+    if(stm32_cmd_sent(STM_ER) != 0)
+    {
+        return -1;
+    }
+    
+    if(0 == number)
+    {
+        send_data[0] = 0xff;
+        send_data[1] = 0x00;
+        if(stm32_data_sent(send_data, 2) != 2)
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        send_data[0] = number-1;
+        send_data[number+1] = number-1;
+        while(i<number)
+        {
+            send_data[i+1] = page[i];
+            send_data[number+1]^= page[i];
+        }
+        if(stm32_data_sent(send_data, number+2) != number + 2)
+        {
+            return -1;
+        }
+
+    }
+    return 0;
+}
 
 int stm32_sync()
 {
@@ -352,3 +397,5 @@ int stm32_sync()
     }
     return -1;
 }
+
+

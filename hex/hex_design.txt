@@ -1,0 +1,47 @@
+The code design of hex
+
+Purpose
+    This document is mainly describle the detail design and function of the hex.c.
+
+Hex file
+    Firstly,we should knows what is a hex file.
+    Hex file is a file format,and it consists of many special lines.
+    The format of each lines as following describle.
+    uint:byte
+    ****************************************************************************************
+    * |start code ':'(1) | byte count (1)| address(2) | record type(1)| data | checksum(1)|*
+    ****************************************************************************************
+
+    if you want know more detail about the six fields , please refs folloing link, and no more
+    introduce here.if you are not in china , you can search more useful infomation in google.
+    https://blog.csdn.net/fz835304205/article/details/79136609
+
+Function
+    OK, this should be the mainly part in this document.
+    below is the expected function what i need:
+    1) it can read data form the hex file and storage the data relate real address only.
+    2) the storaged data can be read.
+    3) the storaged data can be print for debug.
+    4) it should be object-oriented design
+
+
+    1、hex file read
+        input: file name
+        output: file instance id
+
+        step1: get file fd
+        step2: read data and storage in list
+        step3: record list
+
+    1.1 read data & storage
+        input: file fd
+        output: list address which storage data from hex file
+
+        record data in list line by line until end.
+
+
+    2、read data form list
+        input: file name / file  instance id
+        output: line header address
+
+
