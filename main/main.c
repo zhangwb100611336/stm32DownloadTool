@@ -88,7 +88,7 @@ int burn(int argn, char** argv)
     printf("\nwrite complete!\n");
 
     printf("run program\n");
-    sleep(10);
+    sleep(1);
     if(-1 == stm32_cmd_go(begin_addr))
     {
         printf("go command error!\n");
